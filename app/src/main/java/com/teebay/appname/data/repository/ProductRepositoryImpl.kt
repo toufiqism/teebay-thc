@@ -8,6 +8,7 @@ import com.teebay.appname.data.mappers.toDomain
 import com.teebay.appname.data.mappers.toEntity
 import com.teebay.appname.domain.model.CreateProductRequest
 import com.teebay.appname.domain.model.Product
+import com.teebay.appname.domain.model.ProductDraft
 import com.teebay.appname.domain.model.UpdateProductRequest
 import com.teebay.appname.domain.repository.ProductRepository
 import kotlinx.coroutines.flow.Flow
@@ -20,6 +21,7 @@ class ProductRepositoryImpl(private val context: Context) : ProductRepository {
 
     private object PreferencesKeys {
         val PRODUCTS_DATA = stringPreferencesKey("products_data")
+        val PRODUCT_DRAFTS_DATA = stringPreferencesKey("product_drafts_data")
     }
 
     override suspend fun createProduct(request: CreateProductRequest, userId: String): Result<Product> {
@@ -113,6 +115,64 @@ class ProductRepositoryImpl(private val context: Context) : ProductRepository {
     private suspend fun saveProducts(products: List<ProductEntity>) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.PRODUCTS_DATA] = Json.encodeToString(products)
+        }
+    }
+
+    // Draft management implementation
+    override suspend fun saveDraft(draft: ProductDraft): Result<Unit> {
+        return try {
+            val drafts = getStoredDrafts().toMutableMap()
+            drafts[draft.userId] = draft.copy(updatedAt = System.currentTimeMillis())
+            saveDrafts(drafts)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getDraft(userId: String): ProductDraft? {
+        return try {
+            getStoredDrafts()[userId]
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun deleteDraft(userId: String): Result<Unit> {
+        return try {
+            val drafts = getStoredDrafts().toMutableMap()
+            drafts.remove(userId)
+            saveDrafts(drafts)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun hasDraft(userId: String): Boolean {
+        return try {
+            getStoredDrafts().containsKey(userId)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun getStoredDrafts(): Map<String, ProductDraft> {
+        return try {
+            val draftsJson = context.dataStore.data.first()[PreferencesKeys.PRODUCT_DRAFTS_DATA]
+            if (draftsJson.isNullOrEmpty()) {
+                emptyMap()
+            } else {
+                Json.decodeFromString<Map<String, ProductDraft>>(draftsJson)
+            }
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+
+    private suspend fun saveDrafts(drafts: Map<String, ProductDraft>) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.PRODUCT_DRAFTS_DATA] = Json.encodeToString(drafts)
         }
     }
 } 

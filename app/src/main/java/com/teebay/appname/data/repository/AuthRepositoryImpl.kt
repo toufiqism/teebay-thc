@@ -169,7 +169,7 @@ class AuthRepositoryImpl(private val context: Context) : AuthRepository {
                 phoneNumber = "0000000000",
                 address = "Default Address",
                 dateOfBirth = "1990-01-01",
-                biometricEnabled = false
+                biometricEnabled = true
             )
             users.add(defaultUser)
             saveUsers(users)

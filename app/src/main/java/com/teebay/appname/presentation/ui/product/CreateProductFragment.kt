@@ -2,6 +2,7 @@ package com.teebay.appname.presentation.ui.product
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -35,6 +36,7 @@ import com.teebay.appname.presentation.adapter.CategoryItem
 import com.teebay.appname.presentation.viewmodel.CreateProductState
 import com.teebay.appname.presentation.viewmodel.CreateProductStep
 import com.teebay.appname.presentation.viewmodel.CreateProductViewModel
+import com.teebay.appname.presentation.viewmodel.DraftState
 import com.teebay.appname.presentation.viewmodel.ViewModelFactory
 import java.text.NumberFormat
 import java.util.Locale
@@ -130,6 +132,10 @@ class CreateProductFragment : Fragment() {
 
         viewModel.createProductState.observe(viewLifecycleOwner) { state ->
             handleCreateProductState(state)
+        }
+
+        viewModel.draftState.observe(viewLifecycleOwner) { state ->
+            handleDraftState(state)
         }
     }
 
@@ -381,6 +387,38 @@ class CreateProductFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun handleDraftState(state: DraftState) {
+        when (state) {
+            is DraftState.DraftAvailable -> {
+                showDraftResumeDialog()
+            }
+            is DraftState.DraftLoaded -> {
+                // Draft loaded successfully, no action needed
+                // The UI will update automatically through data binding
+            }
+            is DraftState.Error -> {
+                showError("Draft error: ${state.message}")
+            }
+            is DraftState.NoDraft -> {
+                // No draft available, normal flow
+            }
+        }
+    }
+
+    private fun showDraftResumeDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Resume Draft")
+            .setMessage("You have a saved draft. Would you like to resume or start a new entry?")
+            .setPositiveButton("Resume") { _, _ ->
+                viewModel.loadDraftData()
+            }
+            .setNegativeButton("Start New") { _, _ ->
+                viewModel.discardDraft()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun checkCameraPermissionAndTakePhoto() {

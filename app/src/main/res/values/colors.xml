@@ -7,6 +7,6 @@
     <color name="design_default_color_primary">#FF6200EE</color>
     <color name="design_default_color_secondary">#FF03DAC5</color>
     <color name="design_default_color_error">#FFB00020</color>
-    <color name="design_default_color_outline">#FF79747E</color>
+    <color name="design_default_color_outline">#FFFFFFFF</color>
     <color name="design_default_color_surface_variant">#FFF5F5F5</color>
 </resources>

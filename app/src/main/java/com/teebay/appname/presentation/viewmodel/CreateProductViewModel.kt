@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.teebay.appname.domain.model.Category
 import com.teebay.appname.domain.model.CreateProductRequest
+import com.teebay.appname.domain.model.ProductDraft
 import com.teebay.appname.domain.model.RentDuration
 import com.teebay.appname.domain.repository.AuthRepository
 import com.teebay.appname.domain.repository.ProductRepository
@@ -41,6 +42,12 @@ class CreateProductViewModel(
     private val _rentDuration = MutableLiveData<RentDuration>()
     val rentDuration: LiveData<RentDuration> = _rentDuration
 
+    // Draft-related LiveData
+    private val _draftState = MutableLiveData<DraftState>()
+    val draftState: LiveData<DraftState> = _draftState
+
+    private var currentUserId: String? = null
+
     init {
         _currentStep.value = CreateProductStep.TITLE
         _selectedCategories.value = emptyList()
@@ -48,30 +55,40 @@ class CreateProductViewModel(
         _title.value = ""
         _description.value = ""
         _rentDuration.value = RentDuration.PER_DAY
+        _draftState.value = DraftState.NoDraft
+        
+        // Get current user and check for drafts
+        checkForExistingDraft()
     }
 
     fun setTitle(title: String) {
         _title.value = title
+        autoSaveDraft()
     }
 
     fun setCategories(categories: List<Category>) {
         _selectedCategories.value = categories
+        autoSaveDraft()
     }
 
     fun setDescription(description: String) {
         _description.value = description
+        autoSaveDraft()
     }
 
     fun setImagePath(imagePath: String?) {
         _imagePath.value = imagePath
+        autoSaveDraft()
     }
 
     fun setPrice(price: String) {
         _price.value = price
+        autoSaveDraft()
     }
 
     fun setRentDuration(duration: RentDuration) {
         _rentDuration.value = duration
+        autoSaveDraft()
     }
 
     fun goToNextStep(): Boolean {
@@ -80,6 +97,7 @@ class CreateProductViewModel(
         
         if (next != null && validateCurrentStep()) {
             _currentStep.value = next
+            autoSaveDraft()
             return true
         }
         return false
@@ -91,6 +109,7 @@ class CreateProductViewModel(
         
         if (previous != null) {
             _currentStep.value = previous
+            autoSaveDraft()
             return true
         }
         return false
@@ -98,6 +117,106 @@ class CreateProductViewModel(
 
     fun goToStep(step: CreateProductStep) {
         _currentStep.value = step
+        autoSaveDraft()
+    }
+
+    // Draft management methods
+    private fun checkForExistingDraft() {
+        viewModelScope.launch {
+            try {
+                val user = authRepository.getCurrentUser()
+                if (user != null) {
+                    currentUserId = user.id
+                    val hasDraft = productRepository.hasDraft(user.id)
+                    if (hasDraft) {
+                        _draftState.value = DraftState.DraftAvailable
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error silently for now
+            }
+        }
+    }
+
+    fun loadDraftData() {
+        viewModelScope.launch {
+            try {
+                currentUserId?.let { userId ->
+                    val draft = productRepository.getDraft(userId)
+                    if (draft != null) {
+                        _title.value = draft.title
+                        _selectedCategories.value = draft.categories
+                        _description.value = draft.description
+                        _imagePath.value = draft.imagePath
+                        _price.value = draft.price
+                        _rentDuration.value = draft.rentDuration ?: RentDuration.PER_DAY
+                        _currentStep.value = getCurrentStepFromInt(draft.currentStep)
+                        _draftState.value = DraftState.DraftLoaded
+                    }
+                }
+            } catch (e: Exception) {
+                _draftState.value = DraftState.Error("Failed to load draft")
+            }
+        }
+    }
+
+    fun discardDraft() {
+        viewModelScope.launch {
+            try {
+                currentUserId?.let { userId ->
+                    productRepository.deleteDraft(userId)
+                    _draftState.value = DraftState.NoDraft
+                }
+            } catch (e: Exception) {
+                // Handle error silently
+            }
+        }
+    }
+
+    private fun autoSaveDraft() {
+        viewModelScope.launch {
+            try {
+                currentUserId?.let { userId ->
+                    val draft = ProductDraft(
+                        userId = userId,
+                        title = _title.value ?: "",
+                        categories = _selectedCategories.value ?: emptyList(),
+                        description = _description.value ?: "",
+                        imagePath = _imagePath.value,
+                        price = _price.value ?: "",
+                        rentDuration = _rentDuration.value,
+                        currentStep = getCurrentStepInt()
+                    )
+                    productRepository.saveDraft(draft)
+                }
+            } catch (e: Exception) {
+                // Handle error silently for auto-save
+            }
+        }
+    }
+
+    private fun getCurrentStepInt(): Int {
+        return when (_currentStep.value) {
+            CreateProductStep.TITLE -> 1
+            CreateProductStep.CATEGORY -> 2
+            CreateProductStep.DESCRIPTION -> 3
+            CreateProductStep.UPLOAD_PICTURE -> 4
+            CreateProductStep.PRICE -> 5
+            CreateProductStep.SUMMARY -> 6
+            null -> 1
+        }
+    }
+
+    private fun getCurrentStepFromInt(step: Int): CreateProductStep {
+        return when (step) {
+            1 -> CreateProductStep.TITLE
+            2 -> CreateProductStep.CATEGORY
+            3 -> CreateProductStep.DESCRIPTION
+            4 -> CreateProductStep.UPLOAD_PICTURE
+            5 -> CreateProductStep.PRICE
+            6 -> CreateProductStep.SUMMARY
+            else -> CreateProductStep.TITLE
+        }
     }
 
     private fun validateCurrentStep(): Boolean {
@@ -164,6 +283,9 @@ class CreateProductViewModel(
 
                 val result = productRepository.createProduct(request, user.id)
                 if (result.isSuccess) {
+                    // Clean up draft on successful submission
+                    productRepository.deleteDraft(user.id)
+                    _draftState.value = DraftState.NoDraft
                     _createProductState.value = CreateProductState.Success(result.getOrThrow())
                 } else {
                     _createProductState.value = CreateProductState.Error(
@@ -193,6 +315,9 @@ class CreateProductViewModel(
         _price.value = ""
         _rentDuration.value = RentDuration.PER_DAY
         _createProductState.value = CreateProductState.Idle
+        
+        // Clear draft when resetting form
+        discardDraft()
     }
 }
 
@@ -210,4 +335,11 @@ sealed class CreateProductState {
     object Loading : CreateProductState()
     data class Success(val product: com.teebay.appname.domain.model.Product) : CreateProductState()
     data class Error(val message: String) : CreateProductState()
+}
+
+sealed class DraftState {
+    object NoDraft : DraftState()
+    object DraftAvailable : DraftState()
+    object DraftLoaded : DraftState()
+    data class Error(val message: String) : DraftState()
 } 

@@ -32,7 +32,7 @@ Teebay is a modern Android application that enables users to rent and buy/sell p
   - Logout functionality with confirmation
   - FAB button to add new products
   
-- **Add Product**: Multi-step product creation flow
+- **Add Product**: Multi-step product creation flow with auto-save
   - **Step 1 - Title**: Product title input with validation
   - **Step 2 - Categories**: Multiple category selection (Electronics, Furniture, Home Appliances, Sporting Goods, Outdoor, Toys)
   - **Step 3 - Description**: Rich text description with 300-character limit
@@ -40,11 +40,34 @@ Teebay is a modern Android application that enables users to rent and buy/sell p
   - **Step 5 - Price**: Price input with rent duration selection (Per Day/Week/Month)
   - **Step 6 - Summary**: Review screen with quick edit options
   - Progress indicator and step navigation (back/forth)
+  - **Draft Auto-Save**: 
+    - Automatic saving of form progress after each field change or step navigation
+    - Draft persistence across app sessions (survives app close/backgrounding)
+    - Resume prompt when returning to form with saved draft
+    - Option to resume saved draft or start fresh
+    - Draft cleanup on successful product submission or manual discard
+    - One draft per user (new draft overwrites previous)
   
-- **Edit Product**: Two-step product editing
-  - Edit product details (title, categories, description)
-  - Edit pricing information
-  - Form pre-population with existing data
+- **Edit Product**: Complete two-step product editing interface
+  - **Step 1 - Edit Details**: Comprehensive product information editor
+    - Product title editing with live validation
+    - Multi-select category modification (supports changing categories)
+    - Description editing with proper text input handling
+    - Image upload/replacement with camera and gallery integration
+    - Form pre-population with existing product data
+  - **Step 2 - Edit Price**: Pricing information management
+    - Price modification with real-time validation
+    - Rent duration adjustment (Per Day/Week/Month)
+    - Instant currency formatting and display
+  - **Navigation Features**:
+    - Back/Next button navigation between steps
+    - Progress indicator showing current step (1/2, 2/2)
+    - Form validation before step progression
+  - **Data Handling**:
+    - Automatic loading of existing product data via product ID
+    - Real-time form synchronization with ViewModel
+    - Success/error state management with user feedback
+    - Navigation back to product list after successful update
   
 - **Delete Product**: Confirmation dialog with product removal
   - "Are you sure?" confirmation dialog
@@ -113,6 +136,16 @@ app/src/main/java/com/teebay/appname/
 4. Run the application on device/emulator
 
 ### Usage
+
+#### Product Management Flow
+1. **View Your Products**: Access "My Products" screen after login
+2. **Add New Product**: Use FAB (+) button to create new products through 6-step wizard
+3. **Edit Existing Product**: 
+   - Tap the "Edit" button on any product card
+   - Navigate through 2-step editing process
+   - Review and update product details and pricing
+   - Confirm changes to update the product
+4. **Delete Product**: Tap product card and confirm deletion through dialog
 
 #### Registration Flow
 1. Launch the app (starts with Login screen)
@@ -239,4 +272,4 @@ This project is developed for educational/assessment purposes.
 ---
 
 **Last Updated**: December 2024
-**Version**: 1.0.0 (Part 1 - Authentication System)
+**Version**: 2.0.0 (Part 2 - Complete Product Management System)
