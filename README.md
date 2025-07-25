@@ -4,9 +4,9 @@
 
 Teebay is a modern Android application that enables users to rent and buy/sell products. This application is built using modern Android development practices, clean architecture principles, and includes advanced authentication features like biometric (fingerprint and face) authentication.
 
-## Features Implemented (Part 1)
+## Features Implemented (Part 1 & 2)
 
-### ✅ Authentication System
+### ✅ Authentication System (Part 1)
 - **User Registration**: Complete user registration with form validation
   - First Name, Last Name
   - Email address with validation
@@ -25,6 +25,31 @@ Teebay is a modern Android application that enables users to rent and buy/sell p
   - Fallback to password authentication
   - Device compatibility checks
 
+### ✅ Product Management System (Part 2)
+- **My Products Screen**: Complete product listing interface
+  - Product cards with images, titles, categories, prices
+  - Empty state with helpful messaging
+  - Logout functionality with confirmation
+  - FAB button to add new products
+  
+- **Add Product**: Multi-step product creation flow
+  - **Step 1 - Title**: Product title input with validation
+  - **Step 2 - Categories**: Multiple category selection (Electronics, Furniture, Home Appliances, Sporting Goods, Outdoor, Toys)
+  - **Step 3 - Description**: Rich text description with 300-character limit
+  - **Step 4 - Upload Picture**: Camera and gallery integration with permissions
+  - **Step 5 - Price**: Price input with rent duration selection (Per Day/Week/Month)
+  - **Step 6 - Summary**: Review screen with quick edit options
+  - Progress indicator and step navigation (back/forth)
+  
+- **Edit Product**: Two-step product editing
+  - Edit product details (title, categories, description)
+  - Edit pricing information
+  - Form pre-population with existing data
+  
+- **Delete Product**: Confirmation dialog with product removal
+  - "Are you sure?" confirmation dialog
+  - Immediate UI updates after deletion
+
 ### 🔧 Technical Implementation
 
 #### Architecture
@@ -36,15 +61,17 @@ Teebay is a modern Android application that enables users to rent and buy/sell p
 #### Libraries and Technologies
 - **Kotlin**: 100% Kotlin implementation
 - **Android Jetpack Components**:
-  - Navigation Component
-  - Fragment
+  - Navigation Component with Safe Args
+  - Fragment & FragmentContainerView
   - ViewModel & LiveData
   - DataStore Preferences
   - Biometric API
-- **Coroutines**: Asynchronous programming
-- **View Binding**: Type-safe view access
-- **Material Design 3**: Modern UI components
-- **Kotlin Serialization**: JSON serialization
+  - RecyclerView with ListAdapter
+- **Coroutines**: Asynchronous programming with Flow
+- **View Binding**: Type-safe view access for all layouts
+- **Material Design 3**: Modern UI components and cards
+- **Kotlin Serialization**: JSON serialization for data persistence
+- **Camera & Gallery**: Image selection with runtime permissions
 
 #### Project Structure
 ```

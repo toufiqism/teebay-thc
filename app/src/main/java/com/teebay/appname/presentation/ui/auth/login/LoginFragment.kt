@@ -92,8 +92,8 @@ class LoginFragment : Fragment() {
                         "Welcome, ${state.user.firstName}!",
                         Toast.LENGTH_SHORT
                     ).show()
-                    // Navigate to main screen (placeholder for now)
-                    Toast.makeText(requireContext(), "Login Successful!", Toast.LENGTH_LONG).show()
+                    // Navigate to My Products screen
+                    findNavController().navigate(R.id.action_loginFragment_to_myProductsFragment)
                 }
                 is LoginState.Error -> {
                     showLoading(false)

@@ -33,6 +33,7 @@ class AuthRepositoryImpl(private val context: Context) : AuthRepository {
     }
 
     override suspend fun login(request: LoginRequest): AuthResult {
+        ensureDefaultUser()
         return try {
             val users = getStoredUsers()
             val user = users.find { it.email == request.email && it.password == request.password }
@@ -49,6 +50,7 @@ class AuthRepositoryImpl(private val context: Context) : AuthRepository {
     }
 
     override suspend fun register(request: RegisterRequest): AuthResult {
+        ensureDefaultUser()
         return try {
             if (request.password != request.confirmPassword) {
                 return AuthResult.Error("Passwords do not match")
@@ -152,6 +154,25 @@ class AuthRepositoryImpl(private val context: Context) : AuthRepository {
             if (currentUser?.id == userId) {
                 saveCurrentUser(currentUser.copy(biometricEnabled = enabled))
             }
+        }
+    }
+
+    private suspend fun ensureDefaultUser() {
+        val users = getStoredUsers().toMutableList()
+        if (users.none { it.email == "a@a.com" }) {
+            val defaultUser = com.teebay.appname.data.local.entities.UserEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                firstName = "Default",
+                lastName = "User",
+                email = "a@a.com",
+                password = "aA111111",
+                phoneNumber = "0000000000",
+                address = "Default Address",
+                dateOfBirth = "1990-01-01",
+                biometricEnabled = false
+            )
+            users.add(defaultUser)
+            saveUsers(users)
         }
     }
 } 
